@@ -16,30 +16,28 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
-          TF_FILES=$(find . -name "*.tf" | xargs cat)
-          
-          RESPONSE=$(curl -s https://api.groq.com/openai/v1/chat/completions \
-            -H "Authorization: Bearer $GROQ_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "model": "llama-3.3-70b-versatile",
-              "messages": [
-                {
-                  "role": "system",
-                  "content": "You are a cloud security expert. Analyze the provided Terraform IaC for security vulnerabilities. List any issues found with severity (HIGH/MEDIUM/LOW) and explain each. If no issues found, say PASSED."
-                },
-                {
-                  "role": "user",
-                  "content": "Analyze this Terraform code for security vulnerabilities:\n'"$TF_FILES"'"
-                }
+          pip install groq -q
+          python3 << 'EOF'
+          import os, sys, glob
+          from groq import Groq
+
+          client = Groq(api_key=os.environ["GROQ_API_KEY"])
+
+          tf_files = glob.glob("**/*.tf", recursive=True)
+          tf_content = ""
+          for f in tf_files:
+              tf_content += f"\n# File: {f}\n" + open(f).read()
+
+          response = client.chat.completions.create(
+              model="llama-3.3-70b-versatile",
+              messages=[
+                  {"role": "system", "content": "You are a cloud security expert. Analyze the provided Terraform IaC for security vulnerabilities. List any issues found with severity (HIGH/MEDIUM/LOW) and explain each. If no issues found, say PASSED."},
+                  {"role": "user", "content": f"Analyze this Terraform code:\n{tf_content}"}
               ]
-            }')
-          
-          echo "$RESPONSE" | python3 -c "
-          import sys, json
-          data = json.load(sys.stdin)
-          result = data['choices'][0]['message']['content']
+          )
+
+          result = response.choices[0].message.content
           print(result)
-          if 'HIGH' in result:
+          if "HIGH" in result:
               sys.exit(1)
-          "
+          EOF
