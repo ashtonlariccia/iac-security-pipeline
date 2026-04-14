@@ -31,7 +31,7 @@ jobs:
           response = client.chat.completions.create(
               model="llama-3.3-70b-versatile",
               messages=[
-                  {"role": "system", "content": "You are a cloud security expert. Analyze the provided Terraform IaC for security vulnerabilities. List any issues found with severity (HIGH/MEDIUM/LOW) and explain each. If no issues found, say PASSED."},
+                  {"role": "system", "content": open("prompts/system.txt").read()},
                   {"role": "user", "content": f"Analyze this Terraform code:\n{tf_content}"}
               ]
           )
