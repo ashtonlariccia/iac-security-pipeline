@@ -67,3 +67,4 @@ resource "aws_s3_bucket_logging" "demo" {
   target_bucket = aws_s3_bucket.demo.id
   target_prefix = "/logs/"
 }# trigger
+# trigger

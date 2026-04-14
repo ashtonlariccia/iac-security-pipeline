@@ -19,5 +19,6 @@ response = client.chat.completions.create(
 result = response.choices[0].message.content
 print(result)
 
-if "**HIGH**" in result or "HIGH**:" in result or "(HIGH)" in result:
+lines = result.upper().split("\n")
+if any("HIGH" in line and "NO " not in line for line in lines):
     sys.exit(1)
